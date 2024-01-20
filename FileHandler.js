@@ -200,26 +200,12 @@ class FileHandlerAsync {
    * @throws {Error} If there is an error during the file copy operation.
    */
   static async copyFile(readPath, writePath) {
-    const readStream = fs.createReadStream(readPath)
-    const writeStream = fs.createWriteStream(writePath)
-
-    readStream.on('data', chunk => {
-      writeStream.write(chunk)
-    })
-
-    readStream.on('error', error => {
-      console.error('An error occurred while reading the file:', error.message)
-      writeStream.end()
-      throw error
-    })
-
-    readStream.on('end', () => {
-      writeStream.end()
-    })
-
-    writeStream.on('close', () => {
-      process.stdout.write('File copied successfully.\n')
-    })
+    const readStream = fs.createReadStream(path.join(__dirname, readPath))
+    const writeStream = fs.createWriteStream(path.join(__dirname, writePath))
+    readStream
+      .pipe(writeStream)
+      .on('finish', () => console.log('File copied'))
+      .on('error', err => console.log(`Error copying: ${err.message}`))
   }
   /**
    * Reads the statistics of files in a folder and logs information about each file.
@@ -403,7 +389,10 @@ class FileHandlerAsync {
     }
   }
 }
-
+FileHandlerAsync.copyFile(
+  '/01-read-file/text.txt',
+  '/01-read-file/text-copy.txt'
+)
 // FileHandlerAsync.deleteFile('test.txt')
 // FileHandlerAsync.readDir('/04-copy-directory').then(files => console.log(files))
 // FileHandlerAsync.makeDir('test')
