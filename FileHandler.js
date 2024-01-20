@@ -146,26 +146,26 @@ class FileHandlerAsync {
   }
   /**
    * Saves a copy of the file with a random name and specified extension.
-   * @param {string} filePath - The path to the file to copy.
-   * @param {string} path - The destination path for the copied file.
+   * @param {string} sourcePath - The path to the file to copy.
+   * @param {string} destinationPath - The destination path for the copied file.
    * @param {string} randomFileName - The timestamp string to use as the filename.
    * @param {string} [extension='csv'] - The file extension (default is 'csv').
    * @throws {Error} If there is an error copying the file.
    */
 
   static async saveFileRandom(
-    filePath,
-    path,
+    sourcePath,
+    destinationPath,
     randomFileName,
     extension = 'csv'
   ) {
     try {
       await fs.promises.copyFile(
-        filePath,
-        `${path}/${randomFileName}.${extension}`
+        sourcePath,
+        `${destinationPath}/${randomFileName}.${extension}`
       )
       console.log(
-        `Temporary test file ${randomFileName} copied! to ${path}${randomFileName}.${extension}`
+        `Temporary test file ${randomFileName} copied! to ${destinationPath}${randomFileName}.${extension}`
       )
     } catch (err) {
       console.error(
@@ -190,6 +190,36 @@ class FileHandlerAsync {
       )
       throw err
     }
+  }
+  /**
+   * Copies a file from the specified source path to the destination path.
+   *
+   * @param {string} readPath - The path of the file to be read (source path).
+   * @param {string} writePath - The path where the file should be written (destination path).
+   * @returns {Promise<void>} The function does not return a value, but performs the file copy operation.
+   * @throws {Error} If there is an error during the file copy operation.
+   */
+  static async copyFile(readPath, writePath) {
+    const readStream = fs.createReadStream(readPath)
+    const writeStream = fs.createWriteStream(writePath)
+
+    readStream.on('data', chunk => {
+      writeStream.write(chunk)
+    })
+
+    readStream.on('error', error => {
+      console.error('An error occurred while reading the file:', error.message)
+      writeStream.end()
+      throw error
+    })
+
+    readStream.on('end', () => {
+      writeStream.end()
+    })
+
+    writeStream.on('close', () => {
+      process.stdout.write('File copied successfully.\n')
+    })
   }
   /**
    * Reads the statistics of files in a folder and logs information about each file.
