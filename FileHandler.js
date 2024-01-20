@@ -279,12 +279,13 @@ class FileHandlerAsync {
             const readStream = fs.createReadStream(sourcePath)
             const writeStream = fs.createWriteStream(destinationPath)
 
-            await new Promise((resolve, reject) => {
-              readStream.pipe(writeStream)
-              writeStream.on('finish', resolve)
-              writeStream.on('error', reject)
+            readStream.pipe(writeStream)
+            writeStream.on('finish', () =>
               console.log(`File copied successfully to ${destinationPath}`)
-            })
+            )
+            writeStream.on('error', err =>
+              console.log(`Error copying : ${err.message}`)
+            )
           }
         })
       )
@@ -389,10 +390,11 @@ class FileHandlerAsync {
     }
   }
 }
-FileHandlerAsync.copyFile(
-  '/01-read-file/text.txt',
-  '/01-read-file/text-copy.txt'
-)
+
+// FileHandlerAsync.copyFile(
+//   '/01-read-file/text.txt',
+//   '/01-read-file/text-copy.txt'
+// )
 // FileHandlerAsync.deleteFile('test.txt')
 // FileHandlerAsync.readDir('/04-copy-directory').then(files => console.log(files))
 // FileHandlerAsync.makeDir('test')
