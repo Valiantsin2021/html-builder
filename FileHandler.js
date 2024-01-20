@@ -198,12 +198,22 @@ class FileHandlerAsync {
   /**
    * Recursively deletes a non-empty directory and its contents.
    *
-   * @param {string} folderPath - The path to the directory to be deleted.
+   * @param {string} folderPath - The path to the directory or file to be deleted.
    * @returns {Promise<void>} A promise that resolves once the directory and its contents are deleted.
    * @throws {Error} If there is an error deleting the directory.
    */
   static async delete(folderPath) {
     try {
+      if ((await fs.promises.stat(folderPath)).isFile()) {
+        try {
+          await fs.promises.unlink(folderPath)
+          console.log(`File ${folderPath} deleted`)
+        } catch (err) {
+          console.error(
+            `Error deleting file ${folderPath} with error: ${err.message}`
+          )
+        }
+      }
       const contents = await fs.promises.readdir(
         path.join(__dirname, folderPath)
       )
@@ -410,6 +420,7 @@ class FileHandlerAsync {
     })
   }
 }
+FileHandlerAsync.delete('tes')
 // FileHandlerAsync.moveFiles('folder', '01-read-file/folder-moved')
 // FileHandlerAsync.copyFile(
 //   '/01-read-file/text.txt',
