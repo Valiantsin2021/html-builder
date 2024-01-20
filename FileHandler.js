@@ -68,7 +68,9 @@ class FileHandlerAsync {
       await fs.promises.writeFile(path.join(__dirname, fileName), data)
       console.log(`File written to path: ${fileName}`)
     } catch (err) {
-      console.error(err)
+      console.error(
+        `Failed to write file ${fileName} with error ${err.message}`
+      )
       throw err
     }
   }
@@ -82,7 +84,9 @@ class FileHandlerAsync {
   static async readFileToConsole(file) {
     const stream = fs.createReadStream(path.join(__dirname, file))
     stream.on('data', data => console.log(data.toString()))
-    stream.on('error', err => console.error(err))
+    stream.on('error', err =>
+      console.error(`Failed to read file ${file} with error ${err.message}`)
+    )
   }
   /**
    * Writes user input to a file, allowing continuous input until terminated by the user.
@@ -192,6 +196,52 @@ class FileHandlerAsync {
     }
   }
   /**
+   * Recursively deletes a non-empty directory and its contents.
+   *
+   * @param {string} folderPath - The path to the directory to be deleted.
+   * @returns {Promise<void>} A promise that resolves once the directory and its contents are deleted.
+   * @throws {Error} If there is an error deleting the directory.
+   */
+  static async delete(folderPath) {
+    try {
+      const contents = await fs.promises.readdir(
+        path.join(__dirname, folderPath)
+      )
+      for (const item of contents) {
+        const itemPath = path.join(__dirname, folderPath, item)
+
+        if ((await fs.promises.stat(itemPath)).isDirectory()) {
+          await FileHandlerAsync.delete(`${folderPath}/${item}`)
+        } else {
+          try {
+            await fs.promises.unlink(itemPath)
+            console.log(`File ${itemPath} deleted`)
+          } catch (err) {
+            console.error(
+              `Error deleting file ${itemPath} with error: ${err.message}`
+            )
+          }
+        }
+      }
+      try {
+        await fs.promises.rmdir(path.join(__dirname, folderPath))
+        console.log(`Directory ${folderPath} deleted`)
+      } catch (err) {
+        console.error(
+          `Error deliting directory ${folderPath} with error: ${err.message}`
+        )
+      }
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        return
+      }
+      console.error(
+        `Failed to delete folder ${folderPath} with error: ${err.message}`
+      )
+      throw err
+    }
+  }
+  /**
    * Copies a file from the specified source path to the destination path.
    *
    * @param {string} readPath - The path of the file to be read (source path).
@@ -205,7 +255,7 @@ class FileHandlerAsync {
     readStream
       .pipe(writeStream)
       .on('finish', () => console.log('File copied'))
-      .on('error', err => console.log(`Error copying: ${err.message}`))
+      .on('error', err => console.error(`Error copying file: ${err.message}`))
   }
   /**
    * Reads the statistics of files in a folder and logs information about each file.
@@ -217,12 +267,12 @@ class FileHandlerAsync {
   static async readFilesStatsInFolder(folder) {
     fs.readdir(path.join(__dirname, folder), (error, files) => {
       if (error) {
-        console.log(error.message)
+        console.error(`Error reading dir ${folder} with error ${error.message}`)
       }
       files.forEach(file => {
         fs.stat(path.join(__dirname, folder, file), (err, stats) => {
           if (error) {
-            console.log(error.message)
+            console.error(`Error: with error ${error.message}`)
             return
           }
           if (stats.isFile()) {
@@ -263,7 +313,7 @@ class FileHandlerAsync {
       await Promise.all(
         removedFiles.map(
           async file =>
-            await FileHandlerAsync.deleteFile(`${destinationDir}/${file}`)
+            await FileHandlerAsync.delete(`${destinationDir}/${file}`)
         )
       )
       await Promise.all(
@@ -284,7 +334,7 @@ class FileHandlerAsync {
               console.log(`File copied successfully to ${destinationPath}`)
             )
             writeStream.on('error', err =>
-              console.log(`Error copying : ${err.message}`)
+              console.error(`Error copying : with error ${err.message}`)
             )
           }
         })
@@ -346,7 +396,7 @@ class FileHandlerAsync {
 
       console.log('Files merged successfully!')
     } catch (error) {
-      console.error('Error compiling styles:', error)
+      console.error(`Error compiling styles: with error ${error.message}`)
     }
   }
   /**
@@ -355,48 +405,18 @@ class FileHandlerAsync {
    * @param {string} destinationFolder - Path to the destination folder inside the parent folder.
    */
   static async moveFiles(sourceFolder, destinationFolder) {
-    if (path.resolve(sourceFolder) === path.resolve(destinationFolder)) {
-      console.error('Source and destination must not be the same.')
-      return
-    }
-
-    try {
-      await FileHandlerAsync.makeDir(destinationFolder)
-    } catch (error) {
-      console.error(`Error creating destination folder: ${error.message}`)
-      return
-    }
-
-    try {
-      const files = await fs.promises.readdir(sourceFolder)
-
-      await Promise.all(
-        files.map(async file => {
-          const sourcePath = path.join(sourceFolder, file)
-          const destinationPath = path.join(destinationFolder, file)
-
-          try {
-            await fs.promises.copyFile(sourcePath, destinationPath)
-            console.log(`Moved: ${file}`)
-          } catch (error) {
-            console.error(`Error moving file ${file}: ${error.message}`)
-          }
-        })
-      )
-
-      console.log('All files moved successfully.')
-    } catch (error) {
-      console.error(`Error reading source folder: ${error.message}`)
-    }
+    FileHandlerAsync.copyDir(sourceFolder, destinationFolder).then(() => {
+      FileHandlerAsync.delete(sourceFolder)
+    })
   }
 }
-
+// FileHandlerAsync.moveFiles('folder', '01-read-file/folder-moved')
 // FileHandlerAsync.copyFile(
 //   '/01-read-file/text.txt',
 //   '/01-read-file/text-copy.txt'
 // )
 // FileHandlerAsync.deleteFile('test.txt')
-// FileHandlerAsync.readDir('/04-copy-directory').then(files => console.log(files))
+// FileHandlerAsync.readDir('04-copy-directory').then(files => console.log(files))
 // FileHandlerAsync.makeDir('test')
 // FileHandlerAsync.writeFile('test.txt', 'hello')
 // FileHandlerAsync.appendFile('test.txt', 'bye')
