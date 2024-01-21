@@ -214,9 +214,7 @@ class FileHandlerAsync {
           )
         }
       }
-      const contents = await fs.promises.readdir(
-        path.join(__dirname, folderPath)
-      )
+      const contents = await FileHandlerAsync.readDir(folderPath)
       for (const item of contents) {
         const itemPath = path.join(__dirname, folderPath, item)
 
@@ -275,29 +273,25 @@ class FileHandlerAsync {
    * @throws {Error} - If there is an error while reading the file statistics.
    */
   static async readFilesStatsInFolder(folder) {
-    fs.readdir(path.join(__dirname, folder), (error, files) => {
-      if (error) {
-        console.error(`Error reading dir ${folder} with error ${error.message}`)
-      }
-      files.forEach(file => {
-        fs.stat(path.join(__dirname, folder, file), (err, stats) => {
-          if (error) {
-            console.error(`Error: with error ${error.message}`)
-            return
-          }
-          if (stats.isFile()) {
-            const fileSize = stats.size
-            const fileSizeInKB = fileSize / 1024
-            const fileName = path.parse(file).name
-            const fileExtension = path.parse(file).ext.substring(1)
+    const files = await FileHandlerAsync.readDir(folder)
+    files.forEach(file => {
+      fs.stat(path.join(__dirname, folder, file), (err, stats) => {
+        if (err) {
+          console.error(`Error: with error ${err.message}`)
+          return
+        }
+        if (stats.isFile()) {
+          const fileSize = stats.size
+          const fileSizeInKB = fileSize / 1024
+          const fileName = path.parse(file).name
+          const fileExtension = path.parse(file).ext.substring(1)
 
-            console.log(
-              `${fileName} - ${fileExtension} - ${fileSizeInKB.toFixed(3)}kb`
-            )
-          } else {
-            return
-          }
-        })
+          console.log(
+            `${fileName} - ${fileExtension} - ${fileSizeInKB.toFixed(3)}kb`
+          )
+        } else {
+          return
+        }
       })
     })
   }
@@ -313,8 +307,8 @@ class FileHandlerAsync {
     try {
       await FileHandlerAsync.makeDir(destinationDir)
 
-      const sourceItems = await fs.promises.readdir(sourceDir)
-      const destinationFiles = await fs.promises.readdir(destinationDir)
+      const sourceItems = await FileHandlerAsync.readDir(sourceDir)
+      const destinationFiles = await FileHandlerAsync.readDir(destinationDir)
 
       const removedFiles = destinationFiles.filter(
         file => !sourceItems.includes(file)
@@ -375,7 +369,7 @@ class FileHandlerAsync {
     const sourceDir = path.join(__dirname, sourceFolder)
     const validExtensions = extension
     try {
-      const files = await fs.promises.readdir(sourceDir)
+      const files = await FileHandlerAsync.readDir(sourceFolder)
 
       const bundleContent = await Promise.all(
         files.map(async file => {
