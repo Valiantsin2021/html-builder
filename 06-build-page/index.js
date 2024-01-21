@@ -9,15 +9,16 @@ const componentsPath = `${rootFolder}components/`
 const assetsSourceFolder = `${rootFolder}assets/`
 const assetsDistFolder = `${projectDistFolder}assets/`
 let template = FileHandlerAsync.readFile(templatePath).then(async template => {
-  const header = await FileHandlerAsync.readFile(`${componentsPath}header.html`)
-  const articles = await FileHandlerAsync.readFile(
-    `${componentsPath}articles.html`
-  )
-  const footer = await FileHandlerAsync.readFile(`${componentsPath}footer.html`)
-  template = template
-    .replace(/{{header}}/gi, header)
-    .replace(/{{footer}}/gi, footer)
-    .replace(/{{articles}}/gi, articles)
+  const files = await FileHandlerAsync.readDir(componentsPath)
+    const names = []
+    console.log(files)
+    for(const el of files) {
+      const name = el.replace(/\.\w+/, '')
+      if (template.includes(`{{${name}}}`)) {
+        const elContent = await FileHandlerAsync.readFile(`${componentsPath}/${el}`)
+        template = template.replace(`{{${name}}}`, elContent)
+      }
+    }
   return template
 }).catch(err => console.log(err.message))
 template.then(data => {

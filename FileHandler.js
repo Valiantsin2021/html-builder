@@ -12,7 +12,7 @@ class FileHandlerAsync {
   static async readDir(folderPath) {
     try {
       const files = await fs.promises.readdir(path.join(__dirname, folderPath))
-      return files.map(file => `${folderPath}/${file}`)
+      return files
     } catch (err) {
       console.error(
         `Failed to read folder ${folderPath} with error: ${err.message}`
@@ -152,7 +152,7 @@ class FileHandlerAsync {
    * Saves a copy of the file with a random name and specified extension.
    * @param {string} sourcePath - The path to the file to copy.
    * @param {string} destinationPath - The destination path for the copied file.
-   * @param {string} randomFileName - The timestamp string to use as the filename.
+   * @param {string|number} randomFileName - The timestamp string to use as the filename.
    * @param {string} [extension='csv'] - The file extension (default is 'csv').
    * @throws {Error} If there is an error copying the file.
    */
@@ -160,7 +160,7 @@ class FileHandlerAsync {
   static async saveFileRandom(
     sourcePath,
     destinationPath,
-    randomFileName,
+    randomFileName = new Date().getTime(),
     extension = 'csv'
   ) {
     try {
