@@ -241,6 +241,7 @@ class FileHandlerAsync {
       }
     } catch (err) {
       if (err.code === 'ENOENT') {
+        console.log(`Nothing found for path: ${folderPath}`)
         return
       }
       console.error(
